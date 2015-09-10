@@ -1,7 +1,9 @@
 mongoose-mock
 =============
 
-[![Build Status](https://secure.travis-ci.org/JohanObrink/mongoose-mock.png?branch=master)](http://travis-ci.org/JohanObrink/mongoose-mock)
+[![Build Status](https://secure.travis-ci.org/opencharterhub/mongoose-mock.png?branch=master)](http://travis-ci.org/opencharterhub/mongoose-mock)
+[![Dependency Status](https://david-dm.org/opencharterhub/mongoose-mock.svg)](https://david-dm.org/opencharterhub/mongoose-mock)
+[![devDependency Status](https://david-dm.org/opencharterhub/mongoose-mock/dev-status.svg)](https://david-dm.org/opencharterhub/mongoose-mock#info=devDependencies)
 
 ## Installation
 
