@@ -114,5 +114,6 @@ mongoose.model = createModelFromSchema;
 mongoose.set = sinon.stub();
 mongoose.connect = sinon.stub();
 mongoose.connection = {
+    once: sinon.spy(),
     on: sinon.spy()
 };
