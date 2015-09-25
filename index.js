@@ -111,6 +111,7 @@ mongoose.Schema = Schema;
 mongoose.Schema.Types = { ObjectId: ''};  // Defining mongoose types as dummies.
 mongoose.Types = mongoose.Schema.Types;
 mongoose.model = createModelFromSchema;
+mongoose.set = sinon.stub();
 mongoose.connect = sinon.stub();
 mongoose.connection = {
     on: sinon.spy()
