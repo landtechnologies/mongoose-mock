@@ -40,6 +40,7 @@ var Schema = function () {
   Model.method = sinon.stub();
   Model.pre = sinon.stub();
   Model.path = sinon.stub();
+  Model.post = sinon.stub();
   Model.exec = sinon.stub();
 
   Model.path.returns({
@@ -65,6 +66,7 @@ var Schema = function () {
 
   [
     'aggregate',
+    'allowDiskUse',
     'count',
     'create',
     'distinct',
@@ -128,5 +130,11 @@ function createModelFromSchema(name, Type) {
 
 mongoose.Schema = Schema;
 mongoose.Schema.Types = { ObjectId: '' };  // Defining mongoose types as dummies.
+mongoose.Types = mongoose.Schema.Types;
 mongoose.model = createModelFromSchema;
-mongoose.connect = sinon.stub;
+mongoose.set = sinon.stub();
+mongoose.connect = sinon.stub();
+mongoose.connection = {
+    once: sinon.spy(),
+    on: sinon.spy()
+};
