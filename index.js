@@ -18,16 +18,19 @@ mongoose.__proto__ = events.EventEmitter.prototype; // jshint ignore:line
 var Schema = function () {
 
   function Model(properties) {
+
     var self = this;
 
-    if(properties) {
+    if (properties) {
       Object.keys(properties).forEach(function (key) {
         self[key] = properties[key];
       });
     }
+
     this.save = sinon.stub();
     this.increment = sinon.stub();
     this.remove = sinon.stub();
+
     mongoose.emit('document', this);
   }
 
@@ -36,51 +39,64 @@ var Schema = function () {
   Model.static = sinon.stub();
   Model.method = sinon.stub();
   Model.pre = sinon.stub();
+  Model.path = sinon.stub();
+  Model.exec = sinon.stub();
 
-  Model.path = function() {
-    return {
-      validate: sinon.stub(),
-    };
-  };
+  Model.path.returns({
+    validate: sinon.stub(),
+  });
 
-  Model.virtual = function() {
+  Model.virtual = function () {
+
     function SetterGetter() {
-      return {
-        set: function() {
-          return new SetterGetter();
-        },
-        get: function() {
-          return new SetterGetter();
-        }
-      };
+
+      var _set = sinon.stub();
+      var _get = sinon.stub();
+      var _ret = { set: _set, get: _set };
+
+      _set.returns(_ret);
+      _get.returns(_ret);
+
+      return _ret;
     }
+
     return new SetterGetter();
   };
 
-  Model.aggregate = sinon.stub();
-  Model.count = sinon.stub();
-  Model.create = sinon.stub();
-  Model.distinct = sinon.stub();
-  Model.ensureIndexes = sinon.stub();
-  Model.find = sinon.stub();
-  Model.findById = sinon.stub();
-  Model.findByIdAndRemove = sinon.stub();
-  Model.findByIdAndUpdate = sinon.stub();
-  Model.findOne = sinon.stub();
-  Model.findOneAndRemove = sinon.stub();
-  Model.findOneAndUpdate = sinon.stub();
-  Model.geoNear = sinon.stub();
-  Model.geoSearch = sinon.stub();
-  Model.index = sinon.stub();
-  Model.mapReduce = sinon.stub();
-  Model.plugin = sinon.stub();
-  Model.populate = sinon.stub();
-  Model.remove = sinon.stub();
-  Model.set = sinon.stub();
-  Model.update = sinon.stub();
-  Model.where = sinon.stub();
+  [
+    'aggregate',
+    'count',
+    'create',
+    'distinct',
+    'ensureIndexes',
+    'find',
+    'findById',
+    'findByIdAndRemove',
+    'findByIdAndUpdate',
+    'findOne',
+    'findOneAndRemove',
+    'findOneAndUpdate',
+    'geoNear',
+    'geoSearch',
+    'index',
+    'mapReduce',
+    'plugin',
+    'populate',
+    'remove',
+    'select',
+    'set',
+    'update',
+    'where'
+  ].forEach(function (fn) {
+
+    var stub = sinon.stub();
+    stub.returns(Model);
+
+    Model[fn] = stub;
+  });
 
   mongoose.emit('model', Model);
+
   return Model;
 };
 
@@ -88,24 +104,29 @@ var Schema = function () {
 // and may be retrieved by name.
 var models_ = {};
 function createModelFromSchema(name, Type) {
-  if (Type) {
-    if (Type.statics) {
-      Object.keys(Type.statics).forEach(function (key) {
-        Type[key] = Type.statics[key];
-      });
-    }
-    if (Type.methods) {
-      Object.keys(Type.methods).forEach(function (key) {
-        Type.prototype[key] = Type.methods[key];
-      });
-    }
-    models_[name] = Type;
-  } 
+
+  if (!Type) {
+    return models_[name];
+  }
+
+  if (Type.statics) {
+    Object.keys(Type.statics).forEach(function (key) {
+      Type[key] = Type.statics[key];
+    });
+  }
+
+  if (Type.methods) {
+    Object.keys(Type.methods).forEach(function (key) {
+      Type.prototype[key] = Type.methods[key];
+    });
+  }
+
+  models_[name] = Type;
+
   return models_[name];
 }
 
 mongoose.Schema = Schema;
-mongoose.Schema.Types = { ObjectId: ''};  // Defining mongoose types as dummies.
+mongoose.Schema.Types = { ObjectId: '' };  // Defining mongoose types as dummies.
 mongoose.model = createModelFromSchema;
 mongoose.connect = sinon.stub;
-
