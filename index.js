@@ -31,6 +31,10 @@ var Schema = function () {
     this.increment = sinon.stub();
     this.remove = sinon.stub();
 
+    this.save.returns(Promise.resolve(this));
+    this.increment.returns(Promise.resolve(this));
+    this.remove.returns(Promise.resolve(this));
+
     mongoose.emit('document', this);
   }
 
