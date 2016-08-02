@@ -85,12 +85,14 @@ var Schema = function () {
     'geoNear',
     'geoSearch',
     'index',
+    'limit',
     'mapReduce',
     'plugin',
     'populate',
     'remove',
     'select',
     'set',
+    'sort',
     'update',
     'where'
   ].forEach(function (fn) {
