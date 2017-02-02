@@ -1,59 +1,66 @@
 mongoose-mock
 =============
 
-[![Build Status](https://secure.travis-ci.org/opencharterhub/mongoose-mock.png?branch=master)](http://travis-ci.org/opencharterhub/mongoose-mock)
-[![Dependency Status](https://david-dm.org/opencharterhub/mongoose-mock.svg)](https://david-dm.org/opencharterhub/mongoose-mock)
-[![devDependency Status](https://david-dm.org/opencharterhub/mongoose-mock/dev-status.svg)](https://david-dm.org/opencharterhub/mongoose-mock#info=devDependencies)
+# Note that the landdb fork has deviated quite some way from the original.
 
-## Installation
-
-      npm install mongoose-mock
-      
 ## Usage
 
-mongoose-mock is used for swapping out mongoose in unit tests. Use something like [proxyquire](https://github.com/thlorenz/proxyquire) to change the dependency.
+At the top of your test file do:
 
-#### model/User.js
 ```JavaScript
-var mongoose = require('mongoose'),
-  Schema = mongoose.Schema;
-
-var User = new Schema({});
-User.statics.createAndSave = function (props, callback) {
-  var user = new User(props);
-  user.save(function(err, result) {
-    callback(err, result);
-  });
-  return user;
-};
-
-module.exports = mongoose.model('User', User);
+mongooseMock = require('@landtech/mongoose-mock');
 ```
 
-#### test/unit/model/User.js
+From this point on, `require('mongoose')` will return `mongooseMock`, that is within *all* sub modules (and even across npm-link boundaries).   
+
+`mongooseMock` provides `stubs` with `sinon` for all(ish) of the methods you code might need to call.  You can provide custom return values for each of them, or leave them with the defaults (which are `null` in most cases).   
+
+Lets look a full example of usage in a testing file:   
+
 ```JavaScript
 var mongooseMock = require('mongoose-mock'),
-  proxyquire = require('proxyquire'),
-  chai = require('chai'),
-  expect = chai.expect,
-  sinon = require('sinon'),
-  sinonChai = require("sinon-chai");
-chai.use(sinonChai);
+    proxyquire = require('proxyquire'),
+    expect = require('chai').expect,
+    sinon = require('sinon');
 
-describe('User', function () {
+var ThingToTest = proxyquire('../thing-to-test', {
+  /* see proxyquire docs for info on over-riding other modules here */
+});
 
-  var User;
+var SomeModel = mongooseMock.model('SomeModel');
+var AnotherModel = mongooseMock.model('AnotherModel');
 
-  beforeEach(function () {
-    User = proxyquire('../../../model/User', { 'mongoose': mongooseMock });
+describe('ThingToTest', function () {
+  var sandbox;
+
+  beforeEach(() =>{
+    sandbox = sinon.sandbox.create();
+    SomeModel.useSandbox(sandbox);
+    AnotherModel.useSandbox(sandbox);
   });
 
-  describe('.createAndSave', function () {
-    it('saves the user', function () {
-      var callback = sinon.spy();
-      var user = User.createAndSave({ title: 'Mr', lastName: 'White' }, callback);
-      expect(user.save).calledOnce;
+  describe('doAThing', function () {
+
+    it('really does a thing', (done) => {
+      SomeModel.findOne.yields(null, new SomeModel({whatever: 'trevor'}));
+      ThingToTest.doAThing("please", result => {
+        expect(SomeModel.findOne.callCount).to.eql(1);
+        expect(SomeModel.update.getCall(0).args[1]).to.eql({madness: 'this-way'});
+        expect(AnotherModel.find.callCount).to.eql(0);
+      });
     });
+
   });
 });
 ```
+
+Note how we set a new `sandbox` before each test - you can read about sandboxes in `sinon`'s documentation.  Note that in order to make it work here we had to do some slightly hacky stuff - but all you need to know is that you call `useSandbox`.
+
+## Developing
+
+If you run into problems using this module, it's likely that your trying to use a feature that doesn't exist yet. Hopefully it will be easy to add the feature.
+
+I reconmmend using `npm link` during development.
+
+
+
