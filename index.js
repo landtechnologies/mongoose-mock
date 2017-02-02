@@ -1,10 +1,11 @@
 'use strict';
 
-var sinon = require('sinon');
+var sinon = require('sinon'),
     events = require('events'),
     Module = require('module');
 
 var mongoose = {};
+module.exports = mongoose;
 
 // do something a bit like proxyquire, but this ensures there is only ever
 // one instance of mongoose, which is good for npm link.
@@ -13,7 +14,6 @@ Module._load = function (path, module){
   return (path==="mongoose") ? mongoose : originalLoad(path, module);
 };
     
-module.exports = mongoose;
 
 // Mongoose-mock emits events
 // when Models or Documents are created.
@@ -23,11 +23,11 @@ module.exports = mongoose;
 events.EventEmitter.call(mongoose);
 mongoose.__proto__ = events.EventEmitter.prototype; // jshint ignore:line
 
-function stubWithNoThrowYeilds(){
+function stubWithNoThrowYeilds(sandbox){
   // sinon.yeilds throws an error if no callback, but we dont want that...
   var callbackArguments = [];
   var returns = null;
-  var stub = sinon.spy(function(){
+  var stub = sandbox.spy(function(){
     for(var i=0; i< arguments.length; i++)if (typeof arguments[i] === "function") {
       return arguments[i].apply(null, callbackArguments);
     }
@@ -44,7 +44,6 @@ function stubWithNoThrowYeilds(){
 var Schema = function () {
 
   function Model(properties) {
-
     var self = this;
 
     if (properties) {
@@ -53,6 +52,13 @@ var Schema = function () {
       });
     }
 
+    this.save = stubWithNoThrowYeilds(Model._sandbox);
+    this.increment = stubWithNoThrowYeilds(Model._sandbox);
+    this.remove = stubWithNoThrowYeilds(Model._sandbox);
+    this.save.returns(Promise.resolve(this));
+    this.increment.returns(Promise.resolve(this));
+    this.remove.returns(Promise.resolve(this));
+    
     this.toObject = () => {
       var ret = Object.assign({}, this);
       delete ret.save;
@@ -60,87 +66,81 @@ var Schema = function () {
       delete ret.remove;
       delete ret.toObject;
       return ret;
-    }
-
-    this.save = stubWithNoThrowYeilds();
-    this.increment = stubWithNoThrowYeilds();
-    this.remove = stubWithNoThrowYeilds();
-    this.save.returns(Promise.resolve(this));
-    this.increment.returns(Promise.resolve(this));
-    this.remove.returns(Promise.resolve(this));
+    } 
 
     mongoose.emit('document', this);
   }
 
   Model.statics = {};
   Model.methods = {};
-  Model.static = sinon.stub();
-  Model.method = sinon.stub();
-  Model.pre = sinon.stub();
-  Model.path = sinon.stub();
-  Model.post = sinon.stub();
-  Model.plugin = sinon.spy(()=>null);
 
-  Model.path.returns({
-    validate: sinon.stub(),
-  });
+  Model.useSandbox = function(sb){
+    Model._sandbox = sb;
+    Model.static = Model._sandbox.stub();
+    Model.method = Model._sandbox.stub();
+    Model.pre = Model._sandbox.stub();
+    Model.path = Model._sandbox.stub();
+    Model.post = Model._sandbox.stub();
+    Model.plugin = Model._sandbox.spy(()=>null);
+    Model.path.returns({
+      validate: Model._sandbox.stub(),
+    });
 
-  Model.virtual = function () {
+    Model.virtual = function () {
+      function SetterGetter() {
 
-    function SetterGetter() {
+        var _set = Model._sandbox.stub();
+        var _get = Model._sandbox.stub();
+        var _ret = { set: _set, get: _set };
 
-      var _set = sinon.stub();
-      var _get = sinon.stub();
-      var _ret = { set: _set, get: _set };
+        _set.returns(_ret);
+        _get.returns(_ret);
 
-      _set.returns(_ret);
-      _get.returns(_ret);
+        return _ret;
+      }
+      return new SetterGetter();
+    };
 
-      return _ret;
-    }
+    [
+      'aggregate',
+      'allowDiskUse',
+      'count',
+      'create',
+      'distinct',
+      'ensureIndexes',
+      'exec',
+      'find',
+      'findById',
+      'findByIdAndRemove',
+      'findByIdAndUpdate',
+      'findOne',
+      'findOneAndRemove',
+      'findOneAndUpdate',
+      'geoNear',
+      'geoSearch',
+      'index',
+      'limit',
+      'lean',
+      'mapReduce',
+      'populate',
+      'remove',
+      'select',
+      'set',
+      'sort',
+      'update',
+      'where',
+    ].forEach(function (fn) {
+      var stub = stubWithNoThrowYeilds(Model._sandbox);
+      stub.yields(null, null)
+      stub.returns(Model);
+      Model[fn] = stub;
+    });
 
-    return new SetterGetter();
-  };
+    Model.update.yields(null, {n: 1});
+  }
 
-  [
-    'aggregate',
-    'allowDiskUse',
-    'count',
-    'create',
-    'distinct',
-    'ensureIndexes',
-    'exec',
-    'find',
-    'findById',
-    'findByIdAndRemove',
-    'findByIdAndUpdate',
-    'findOne',
-    'findOneAndRemove',
-    'findOneAndUpdate',
-    'geoNear',
-    'geoSearch',
-    'index',
-    'limit',
-    'lean',
-    'mapReduce',
-    'populate',
-    'remove',
-    'select',
-    'set',
-    'sort',
-    'update',
-    'where',
-  ].forEach(function (fn) {
-    var stub = stubWithNoThrowYeilds();
-    stub.yields(null, null)
-    stub.returns(Model);
-    Model[fn] = stub;
-  });
-
-  Model.update.yields(null, {n: 1});
-
+  Model.useSandbox(sinon);
   mongoose.emit('model', Model);
-
   return Model;
 };
 
@@ -169,6 +169,7 @@ function createModelFromSchema(name, Type) {
   return models_[name];
 }
 
+
 mongoose.Schema = Schema;
 mongoose.Schema.Types = { ObjectId: '' };  // Defining mongoose types as dummies.
 mongoose.Types = mongoose.Schema.Types;
@@ -180,5 +181,4 @@ mongoose.connection = {
     on: sinon.spy(),
     useDb: (name) => mongoose
 };
-
 
