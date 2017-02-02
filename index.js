@@ -74,6 +74,7 @@ var Schema = function () {
   Model.statics = {};
   Model.methods = {};
   Model.options = {};
+  Model.discriminator = createModelFromSchema;
 
   Model.useSandbox = function(sb){
     Model._sandbox = sb;
@@ -123,6 +124,7 @@ var Schema = function () {
       'index',
       'limit',
       'lean',
+      'on',
       'mapReduce',
       'populate',
       'remove',
