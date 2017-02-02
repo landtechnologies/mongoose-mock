@@ -1,7 +1,7 @@
 mongoose-mock
 =============
 
-**Note that the landdb fork has deviated quite some way from the original.**
+**Note that the landtech fork has deviated quite some way from the original.**
 
 ## Usage
 
