@@ -1,14 +1,14 @@
 mongoose-mock
 =============
 
-# Note that the landdb fork has deviated quite some way from the original.
+**Note that the landdb fork has deviated quite some way from the original.**
 
 ## Usage
 
 Require as:
 
 ```JavaScript
-mongooseMock = require('@landtech/mongoose-mock');
+var mongooseMock = require('@landtech/mongoose-mock');
 ```
 
 From the point at which this is required, any code that calls `require('mongoose')` will return `mongooseMock`. This even works across npm-link boundaries.   Note that in order to ensure this happens before any tests, put this statement in a `mocha-startup.js` file and then create a `mocha.opts` file with the following content:
@@ -21,7 +21,7 @@ If you are just running a test on one file this is not necessary, but if you are
 
 `mongooseMock` provides `stubs` with `sinon` for all(ish) of the methods you code might need to call.  You can provide custom return values for each of them, or leave them with the defaults (which are `null` in most cases).   
 
-Lets look a full example of usage in a testing file:   
+Lets look at a full example of usage in a testing file:   
 
 ```JavaScript
 var mongooseMock = require('mongoose-mock'),
@@ -29,8 +29,10 @@ var mongooseMock = require('mongoose-mock'),
     expect = require('chai').expect,
     sinon = require('sinon');
 
+// see proxyquire docs for why you might want this rather than just require
 var ThingToTest = proxyquire('../thing-to-test', {});
-// the mock models are now available for accessing...
+
+// the mock models were loaded as children of the above module, and are now available...
 var SomeModel = mongooseMock.model('SomeModel'); 
 var AnotherModel = mongooseMock.model('AnotherModel');
 
@@ -57,9 +59,9 @@ Note how we set a new `sandbox` before each test - you can read about sandboxes 
 
 ## Developing
 
-If you run into problems using this module, it's likely that your trying to use a feature that doesn't exist yet. Hopefully it will be easy to add the feature.
+If you run into problems using this module, it's likely that you are trying to use a feature that doesn't exist yet. Hopefully it will be easy to add!
 
-I reconmmend using `npm link` during development.
+I recommend using `npm link` during development.
 
 
 
