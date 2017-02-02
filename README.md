@@ -5,13 +5,19 @@ mongoose-mock
 
 ## Usage
 
-At the top of your test file do:
+Require as:
 
 ```JavaScript
 mongooseMock = require('@landtech/mongoose-mock');
 ```
 
-From this point on, `require('mongoose')` will return `mongooseMock`, that is within *all* sub modules (and even across npm-link boundaries).   
+From the point at which this is required, any code that calls `require('mongoose')` will return `mongooseMock`. This even works across npm-link boundaries.   Note that in order to ensure this happens before any tests, put this statement in a `mocha-startup.js` file and then create a `mocha.opts` file with the following content:
+
+```
+--require test/mocha-startup.js
+```
+
+If you are just running a test on one file this is not necessary, but if you are running tests recursively (or whatever), then you need the `require` to be called first.  
 
 `mongooseMock` provides `stubs` with `sinon` for all(ish) of the methods you code might need to call.  You can provide custom return values for each of them, or leave them with the defaults (which are `null` in most cases).   
 
@@ -23,38 +29,31 @@ var mongooseMock = require('mongoose-mock'),
     expect = require('chai').expect,
     sinon = require('sinon');
 
-var ThingToTest = proxyquire('../thing-to-test', {
-  /* see proxyquire docs for info on over-riding other modules here */
-});
-
-var SomeModel = mongooseMock.model('SomeModel');
+var ThingToTest = proxyquire('../thing-to-test', {});
+// the mock models are now available for accessing...
+var SomeModel = mongooseMock.model('SomeModel'); 
 var AnotherModel = mongooseMock.model('AnotherModel');
 
 describe('ThingToTest', function () {
   var sandbox;
-
   beforeEach(() =>{
     sandbox = sinon.sandbox.create();
     SomeModel.useSandbox(sandbox);
     AnotherModel.useSandbox(sandbox);
   });
 
-  describe('doAThing', function () {
-
-    it('really does a thing', (done) => {
-      SomeModel.findOne.yields(null, new SomeModel({whatever: 'trevor'}));
-      ThingToTest.doAThing("please", result => {
-        expect(SomeModel.findOne.callCount).to.eql(1);
-        expect(SomeModel.update.getCall(0).args[1]).to.eql({madness: 'this-way'});
-        expect(AnotherModel.find.callCount).to.eql(0);
-      });
+  it('does a thing', (done) => {
+    SomeModel.findOne.yields(null, new SomeModel({whatever: 'trevor'}));
+    ThingToTest.doAThing("please", result => {
+      expect(SomeModel.findOne.callCount).to.eql(1);
+      expect(SomeModel.update.getCall(0).args[1]).to.eql({madness: 'this-way'});
+      expect(AnotherModel.find.callCount).to.eql(0);
     });
-
   });
 });
 ```
 
-Note how we set a new `sandbox` before each test - you can read about sandboxes in `sinon`'s documentation.  Note that in order to make it work here we had to do some slightly hacky stuff - but all you need to know is that you call `useSandbox`.
+Note how we set a new `sandbox` before each test - you can read about sandboxes in `sinon`'s documentation.  Note that in order to make it work here we had to do some slightly hacky stuff - but all you need to know is that you call `useSandbox`. 
 
 ## Developing
 

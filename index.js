@@ -73,6 +73,7 @@ var Schema = function () {
 
   Model.statics = {};
   Model.methods = {};
+  Model.options = {};
 
   Model.useSandbox = function(sb){
     Model._sandbox = sb;
@@ -81,6 +82,7 @@ var Schema = function () {
     Model.pre = Model._sandbox.stub();
     Model.path = Model._sandbox.stub();
     Model.post = Model._sandbox.stub();
+    Model.add = Model._sandbox.stub();
     Model.plugin = Model._sandbox.spy(()=>null);
     Model.path.returns({
       validate: Model._sandbox.stub(),
@@ -174,6 +176,7 @@ mongoose.Schema = Schema;
 mongoose.Schema.Types = { ObjectId: '' };  // Defining mongoose types as dummies.
 mongoose.Types = mongoose.Schema.Types;
 mongoose.model = createModelFromSchema;
+mongoose.getModelsList = function() {return Object.keys(models_)};
 mongoose.set = sinon.stub();
 mongoose.connect = sinon.stub();
 mongoose.connection = {
