@@ -1,9 +1,18 @@
 'use strict';
 
 var sinon = require('sinon');
-var events = require('events');
+    events = require('events'),
+    Module = require('module');
 
 var mongoose = {};
+
+// do something a bit like proxyquire, but this ensures there is only ever
+// one instance of mongoose, which is good for npm link.
+var originalLoad = Module._load;
+Module._load = function (path, module){
+  return (path==="mongoose") ? mongoose : originalLoad(path, module);
+};
+    
 module.exports = mongoose;
 
 // Mongoose-mock emits events
@@ -13,6 +22,23 @@ module.exports = mongoose;
 // the mocked models and document produced.
 events.EventEmitter.call(mongoose);
 mongoose.__proto__ = events.EventEmitter.prototype; // jshint ignore:line
+
+function stubWithNoThrowYeilds(){
+  // sinon.yeilds throws an error if no callback, but we dont want that...
+  var callbackArguments = [];
+  var returns = null;
+  var stub = sinon.spy(function(){
+    for(var i=0; i< arguments.length; i++)if (typeof arguments[i] === "function") {
+      return arguments[i].apply(null, callbackArguments);
+    }
+    return returns;
+  });
+  stub.yields = function(){
+    callbackArguments = Array.prototype.slice.call(arguments, 0);
+  }
+  stub.returns = r => returns = r;
+  return stub;
+}
 
 // ## Schema
 var Schema = function () {
@@ -27,10 +53,18 @@ var Schema = function () {
       });
     }
 
-    this.save = sinon.stub();
-    this.increment = sinon.stub();
-    this.remove = sinon.stub();
+    this.toObject = () => {
+      var ret = Object.assign({}, this);
+      delete ret.save;
+      delete ret.increment;
+      delete ret.remove;
+      delete ret.toObject;
+      return ret;
+    }
 
+    this.save = stubWithNoThrowYeilds();
+    this.increment = stubWithNoThrowYeilds();
+    this.remove = stubWithNoThrowYeilds();
     this.save.returns(Promise.resolve(this));
     this.increment.returns(Promise.resolve(this));
     this.remove.returns(Promise.resolve(this));
@@ -45,7 +79,7 @@ var Schema = function () {
   Model.pre = sinon.stub();
   Model.path = sinon.stub();
   Model.post = sinon.stub();
-  Model.exec = sinon.stub();
+  Model.plugin = sinon.spy(()=>null);
 
   Model.path.returns({
     validate: sinon.stub(),
@@ -75,6 +109,7 @@ var Schema = function () {
     'create',
     'distinct',
     'ensureIndexes',
+    'exec',
     'find',
     'findById',
     'findByIdAndRemove',
@@ -86,22 +121,23 @@ var Schema = function () {
     'geoSearch',
     'index',
     'limit',
+    'lean',
     'mapReduce',
-    'plugin',
     'populate',
     'remove',
     'select',
     'set',
     'sort',
     'update',
-    'where'
+    'where',
   ].forEach(function (fn) {
-
-    var stub = sinon.stub();
+    var stub = stubWithNoThrowYeilds();
+    stub.yields(null, null)
     stub.returns(Model);
-
     Model[fn] = stub;
   });
+
+  Model.update.yields(null, {n: 1});
 
   mongoose.emit('model', Model);
 
@@ -112,7 +148,6 @@ var Schema = function () {
 // and may be retrieved by name.
 var models_ = {};
 function createModelFromSchema(name, Type) {
-
   if (!Type) {
     return models_[name];
   }
@@ -142,5 +177,8 @@ mongoose.set = sinon.stub();
 mongoose.connect = sinon.stub();
 mongoose.connection = {
     once: sinon.spy(),
-    on: sinon.spy()
+    on: sinon.spy(),
+    useDb: (name) => mongoose
 };
+
+
