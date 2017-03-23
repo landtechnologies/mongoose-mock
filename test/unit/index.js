@@ -1,6 +1,7 @@
 var chai = require('chai'),
   expect = chai.expect,
   mongoose = require('../../index.js'),
+  _ = require('underscore'),
   Schema = mongoose.Schema;
 
 describe('mongoose-mocks', function () {
@@ -178,7 +179,7 @@ describe('mongoose-mocks', function () {
         var MyModel = mongoose.model('MyModel', schema);
         var model = new MyModel();
 
-        expect(model.subDocArr).to.eql([]);
+        expect(_.isArray(model.subDocArr)).to.be.true;
       });
       it("doesn't overwrite sub-doc array on instantiated model if passed as property", function() {
         var subDocSchema = mongoose.Schema({});
@@ -187,10 +188,34 @@ describe('mongoose-mocks', function () {
         });
         var MyModel = mongoose.model('MyModel', schema);
         var model = new MyModel({
-          subDocArr: 'ok!'
+          subDocArr: ['ok!']
         });
 
-        expect(model.subDocArr).to.equal('ok!');
+        expect(model.subDocArr[0]).to.equal('ok!');
+      });
+      describe("id method", function() {
+        var model;
+        beforeEach(function() {
+          var subDocSchema = mongoose.Schema({});
+          var MyModel = mongoose.model('MyModel', new Schema({
+            subDocArr: [subDocSchema]
+          }));
+          model = new MyModel();
+        });
+        it("returns sub document", function() {
+          var subDoc1 = {
+            _id: new mongoose.Types.ObjectId()
+          };
+          var subDoc2 = {
+            _id: new mongoose.Types.ObjectId()
+          }
+          model.subDocArr.push(subDoc1);
+          model.subDocArr.push(subDoc2);
+
+          expect(model.subDocArr.id(new mongoose.Types.ObjectId(subDoc1._id))).to.equal(subDoc1);
+          expect(model.subDocArr.id(subDoc1._id)).to.equal(subDoc1);
+          expect(model.subDocArr.id(subDoc2._id)).to.equal(subDoc2);
+        });
       });
     });
   });

@@ -66,6 +66,16 @@ var Schema = function (schemaOptions) {
       if (!self[key]) {
         self[key] = [];
       }
+      var val = self[key]
+      self[key].id = function(id) {
+        var match;
+        if (this.forEach) {
+          match = _.find(this, function(item) {
+            return item._id && item._id.equals && item._id.equals(id);
+          });
+        }
+        return match;
+      };
     });
 
     this.save = stubWithNoThrowYeilds(Model._sandbox);
