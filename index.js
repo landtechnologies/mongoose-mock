@@ -75,14 +75,17 @@ var Schema = function (schemaOptions) {
     this.increment.returns(Promise.resolve(this));
     this.remove.returns(Promise.resolve(this));
     
-    this.toObject = () => {
+    this.toObject = this.toJSON = () => {
       var ret = Object.assign({}, this);
       delete ret.save;
       delete ret.increment;
       delete ret.remove;
       delete ret.toObject;
+      delete ret.toJSON;
       return ret;
-    } 
+    }
+
+
 
     mongoose.emit('document', this);
   }
