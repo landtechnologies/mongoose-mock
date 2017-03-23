@@ -2,7 +2,9 @@
 
 var sinon = require('sinon'),
     events = require('events'),
-    Module = require('module');
+    Module = require('module'),
+    _ = require('underscore'),
+    realMongoose = require('mongoose');
 
 var mongoose = {};
 module.exports = mongoose;
@@ -41,7 +43,15 @@ function stubWithNoThrowYeilds(sandbox){
 }
 
 // ## Schema
-var Schema = function () {
+var Schema = function (schemaOptions) {
+
+  var subDocumentProperties = {};
+
+  _.each(schemaOptions, function(val, key) {
+    if (_.isArray(val) && val[0] && val[0]._mongooseMock_isSchema) {
+      subDocumentProperties[key] = true;
+    }
+  });
 
   function Model(properties) {
     var self = this;
@@ -51,6 +61,12 @@ var Schema = function () {
         self[key] = properties[key];
       });
     }
+
+    Object.keys(subDocumentProperties).forEach(function(key) {
+      if (!self[key]) {
+        self[key] = [];
+      }
+    });
 
     this.save = stubWithNoThrowYeilds(Model._sandbox);
     this.increment = stubWithNoThrowYeilds(Model._sandbox);
@@ -75,6 +91,7 @@ var Schema = function () {
   Model.methods = {};
   Model.options = {};
   Model.discriminator = createModelFromSchema;
+  Model._mongooseMock_isSchema = true;
 
   Model.useSandbox = function(sb){
     Model._sandbox = sb;
@@ -173,10 +190,12 @@ function createModelFromSchema(name, Type) {
   return models_[name];
 }
 
-
 mongoose.Schema = Schema;
-mongoose.Schema.Types = { ObjectId: '' };  // Defining mongoose types as dummies.
-mongoose.Types = mongoose.Schema.Types;
+mongoose.Schema.Types = { ObjectId: realMongoose.Schema.Types.ObjectId };  // Defining mongoose types as dummies.
+//mongoose.Schema.Types = { ObjectId: '' };  // Defining mongoose types as dummies.
+mongoose.Types = Object.assign({}, mongoose.Schema.Types, {
+  ObjectId: realMongoose.Types.ObjectId
+});
 mongoose.model = createModelFromSchema;
 mongoose.getModelsList = function() {return Object.keys(models_)};
 mongoose.set = sinon.stub();
