@@ -169,6 +169,30 @@ describe('mongoose-mocks', function () {
       var MyModelAgain = mongoose.model('MyModel');
       expect(MyModel).to.deep.equal(MyModelAgain);
     });
+    describe('sub-documents', function() {
+      it('instantiates empty if property is sub-document array', function() {
+        var subDocSchema = mongoose.Schema({});
+        var schema = new Schema({
+          subDocArr: [subDocSchema]
+        });
+        var MyModel = mongoose.model('MyModel', schema);
+        var model = new MyModel();
+
+        expect(model.subDocArr).to.eql([]);
+      });
+      it("doesn't overwrite sub-doc array on instantiated model if passed as property", function() {
+        var subDocSchema = mongoose.Schema({});
+        var schema = new Schema({
+          subDocArr: [subDocSchema]
+        });
+        var MyModel = mongoose.model('MyModel', schema);
+        var model = new MyModel({
+          subDocArr: 'ok!'
+        });
+
+        expect(model.subDocArr).to.equal('ok!');
+      });
+    });
   });
   describe('#on', function () {
     it('register a callback for event \'model\'invoked when a new Schema is created', function () {
