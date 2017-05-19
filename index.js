@@ -171,6 +171,19 @@ var Schema = function (schemaOptions) {
     });
 
     Model.update.yields(null, {n: 1});
+
+    Model.collection = {};
+    [
+      'find',
+      'update',
+      'insert',
+      'remove'
+    ].forEach(function (fn) {
+      var stub = stubWithNoThrowYeilds(Model._sandbox);
+      stub.yields(null, null)
+      stub.returns(Model.collection);
+      Model.collection[fn] = stub;
+    });
   }
 
   Model.useSandbox(sinon);
