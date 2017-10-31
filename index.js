@@ -171,6 +171,7 @@ var Schema = function (schemaOptions) {
     });
 
     Model.update.yields(null, {n: 1});
+    Model.then = x => Promise.resolve(x);
 
     Model.collection = {};
     [
