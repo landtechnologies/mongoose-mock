@@ -54,8 +54,25 @@ describe('ThingToTest', function () {
   });
 });
 ```
-
 Note how we set a new `sandbox` before each test - you can read about sandboxes in `sinon`'s documentation.  Note that in order to make it work here we had to do some slightly hacky stuff - but all you need to know is that you call `useSandbox`. 
+
+
+
+Note that if the code being tested is of the following form, i.e. the mongoose stuff ends in a `then` call (i.e. it looks like a Promise):
+
+```JavaScript
+  SomeModel.find({}).populate({}).sort({}).then(res => {
+    // do something with res
+  })
+```
+
+Then, in your test, you need the last non-`then` method (in this case `sort`) to return a thenable...
+
+```JavaScript
+  var SomeModel = mongooseMock.model('SomeModel');
+  SomeModel.sort.returns(Promise.resolve("some results"));
+```
+
 
 ## Developing
 
