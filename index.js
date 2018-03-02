@@ -117,6 +117,7 @@ var Schema = function (schemaOptions) {
     Model.plugin = Model._sandbox.spy(()=>null);
     Model.path.returns({
       validate: Model._sandbox.stub(),
+      discriminator: Model._sandbox.stub()
     });
 
     Model.virtual = function () {
@@ -137,6 +138,7 @@ var Schema = function (schemaOptions) {
     [
       'aggregate',
       'allowDiskUse',
+      'clone',
       'count',
       'create',
       'distinct',
@@ -185,6 +187,7 @@ var Schema = function (schemaOptions) {
       stub.returns(Model.collection);
       Model.collection[fn] = stub;
     });
+
   }
 
   Model.useSandbox(sinon);
@@ -217,12 +220,10 @@ function createModelFromSchema(name, Type) {
   return models_[name];
 }
 
+
+Schema.Types = { ObjectId: realMongoose.Schema.Types.ObjectId };  // Defining mongoose types as dummies.
 mongoose.Schema = Schema;
-mongoose.Schema.Types = { ObjectId: realMongoose.Schema.Types.ObjectId };  // Defining mongoose types as dummies.
-//mongoose.Schema.Types = { ObjectId: '' };  // Defining mongoose types as dummies.
-mongoose.Types = Object.assign({}, mongoose.Schema.Types, {
-  ObjectId: realMongoose.Types.ObjectId
-});
+mongoose.Types = { ObjectId: realMongoose.Types.ObjectId };
 mongoose.model = createModelFromSchema;
 mongoose.getModelsList = function() {return Object.keys(models_)};
 mongoose.set = sinon.stub();
