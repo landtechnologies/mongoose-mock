@@ -167,6 +167,7 @@ var Schema = function (schemaOptions) {
       'sort',
       'update',
       'where',
+      'insertMany'
     ].forEach(function (fn) {
       var stub = stubWithNoThrowYeilds(Model._sandbox);
       stub.yields(null, null)
