@@ -119,7 +119,7 @@ var Schema = function (schemaOptions) {
       validate: Model._sandbox.stub(),
       discriminator: Model._sandbox.stub()
     });
-    Model.then = x => x(Promise.resolve(Model.then.resolves()));
+    Model.then = x => Promise.resolve(x(Model.then.resolves()));
     Model.then.resolves = x => "you need to set mockModel.then.resolves = x => 'bla' ";
 
     Model.virtual = function () {
