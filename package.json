@@ -23,7 +23,7 @@
   },
   "homepage": "https://github.com/JohanObrink/mongoose-mock",
   "dependencies": {
-    "mongoose": "~4.3.0",
+    "mongoose": "~5.7.5",
     "sinon": "^1.16.1",
     "underscore": "^1.7.0"
   },
